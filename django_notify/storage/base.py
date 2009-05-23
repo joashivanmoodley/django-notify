@@ -56,9 +56,11 @@ class BaseStorage(object):
             self.store(self.new_data, response)
         if self.added_new:
             data = self.data + self.new_data
-            self.store(data)
+            self.store(data, response)
 
-    def add(self, message, category, **extras):
+    def add(self, message, category='', **extras):
+        if not message:
+            return
         self.added_new = True
         notification = Notification(message, category, extras)
-        self.append(notification)
+        self.data.append(notification)

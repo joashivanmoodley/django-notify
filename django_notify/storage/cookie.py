@@ -25,13 +25,13 @@ class CookieStorage(BaseStorage):
         return sha1(value + settings.SECRET_KEY).hexdigest()
 
     def _encode(self, data):
-        value = pickle.dumps(data)
+        value = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
         return '%s$%s' % (self._hash(value), value)
 
-    def _decode(data):
+    def _decode(self, data):
         if not data:
             return None
-        bits = cookie.split('$', 1)
+        bits = data.split('$', 1)
         if len(bits) == 2:
             hash, value = bits
             if hash == self._hash(value):

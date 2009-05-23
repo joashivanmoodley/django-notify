@@ -20,5 +20,5 @@ def get_storage(import_name):
     return storage_class
 
 
-Storage = get_storage(getattr(settings, 'NOTIFICATION_STORAGE',
+Storage = get_storage(getattr(settings, 'NOTIFICATIONS_STORAGE',
                               'session.SessionStorage'))
