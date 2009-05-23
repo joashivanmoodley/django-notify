@@ -18,6 +18,6 @@ class SessionStorage(BaseStorage):
 
     def store(self, data, response):
         if data:
-            self.request.session[session_key] = data
+            self.request.session[self.session_key] = data
         else:
-            self.request.session.pop(self.session_key)
+            self.request.session.pop(self.session_key, None)
