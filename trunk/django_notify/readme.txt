@@ -53,8 +53,8 @@ something like::
 	</ul>
 	{% endif %}
 
-If the temporary notifications storage instance is iterated, it's notifications
-will be cleared when the response is processed. To avoid the notifications
+The notifications are marked to be cleared when the storage instance is
+iterated (cleared when the response is processed). To avoid the notifications
 being cleared, you can set ``request.notifications.used = False`` after
 iterating.
 
