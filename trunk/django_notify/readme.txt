@@ -48,7 +48,7 @@ something like::
 	{% if notifications %}
 	<ul class="notifications">
 		{% for message in notifications %}
-		<li{% if message.category %}class="{{ message.category }}">{{ message }}</li>
+		<li{% if message.category %} class="{{ message.category }}"{% endif %}>{{ message }}</li>
 		{% endfor %}
 	</ul>
 	{% endif %}
