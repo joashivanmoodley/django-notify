@@ -27,23 +27,23 @@ class BaseStorage(object):
         super(BaseStorage, self).__init__(*args, **kwargs)
 
     def __len__(self):
-        return len(self.data) + len(self._new_data)
+        return len(self._data) + len(self._new_data)
 
     def __iter__(self):
         self.used = True
         if self._new_data:
-            self.data.extend(self._new_data)
+            self._data.extend(self._new_data)
             self._new_data = []
-        return iter(self.data)
+        return iter(self._data)
 
     def __contains__(self, item):
-        return item in self._data
+        return item in self._data or item in self._new_data
 
     @property
-    def data(self):
-        if not hasattr(self, '_data'):
-            self._data = self._get() or []
-        return self._data
+    def _data(self):
+        if not hasattr(self, '_loaded_data'):
+            self._loaded_data = self._get() or []
+        return self._loaded_data
 
     def _get(self):
         raise NotImplementedError()
@@ -55,7 +55,7 @@ class BaseStorage(object):
         if self.used:
             self._store(self._new_data, response)
         if self.added_new:
-            self._store(self.data+self._new_data, response)
+            self._store(self._data+self._new_data, response)
 
     def add(self, message, tags='', **extras):
         if not message:
