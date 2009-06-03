@@ -2,7 +2,7 @@
 Base temporary notification storage.
 
 This is not a complete class, to be usable it should be subclassed and the
-appropriate methods overridden.
+two methods ``_get`` and ``_store`` overridden.
 '''
 
 from django.utils.encoding import force_unicode
@@ -42,21 +42,21 @@ class BaseStorage(object):
     @property
     def data(self):
         if not hasattr(self, '_data'):
-            self._data = self.get() or []
+            self._data = self._get() or []
         return self._data
 
-    def get(self):
+    def _get(self):
         raise NotImplementedError()
 
-    def store(self, data, response):
+    def _store(self, data, response):
         raise NotImplementedError()
 
     def update(self, response):
         if self.used:
-            self.store(self.new_data, response)
+            self._store(self.new_data, response)
         if self.added_new:
             data = self.data + self.new_data
-            self.store(data, response)
+            self._store(data, response)
 
     def add(self, message, tags='', **extras):
         if not message:
