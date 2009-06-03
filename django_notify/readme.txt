@@ -33,8 +33,8 @@ The middleware adds an instance of a temporary storage class called
 
     request.notifications.add('Hello world.')
 
-You can optionally provide a category (which is usually provided as an HTML
-class for the message)::
+You can optionally provide a string containing tags (which is usually
+represented as HTML classes for the message)::
 
     request.notifications.add('Your rating is over 9000!', 'error')
 
@@ -48,7 +48,7 @@ something like::
 	{% if notifications %}
 	<ul class="notifications">
 		{% for message in notifications %}
-		<li{% if message.category %} class="{{ message.category }}"{% endif %}>{{ message }}</li>
+		<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
 		{% endfor %}
 	</ul>
 	{% endif %}
