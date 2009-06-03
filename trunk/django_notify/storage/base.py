@@ -9,9 +9,9 @@ from django.utils.encoding import force_unicode
 
 
 class Notification(object):
-    def __init__(self, message, category='', extras=None):
+    def __init__(self, message, tags='', extras=None):
         self.message = message
-        self.category = category
+        self.tags = tags
         self.extras = extras or {}
 
     def __unicode__(self):
@@ -58,9 +58,9 @@ class BaseStorage(object):
             data = self.data + self.new_data
             self.store(data, response)
 
-    def add(self, message, category='', **extras):
+    def add(self, message, tags='', **extras):
         if not message:
             return
         self.added_new = True
-        notification = Notification(message, category, extras)
+        notification = Notification(message, tags, extras)
         self.data.append(notification)

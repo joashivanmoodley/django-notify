@@ -36,6 +36,8 @@ class CookieStorage(BaseStorage):
             hash, value = bits
             if hash == self._hash(value):
                 try:
+                    # If we get here (and the pickle works), everything is
+                    # good. In any other case, drop back and return None.
                     return pickle.loads(value)
                 except:
                     pass
