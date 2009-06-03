@@ -13,10 +13,10 @@ class SessionStorage(BaseStorage):
             "notification storage requires session middleware to be installed."
         super(SessionStorage, self).__init__(request, *args, **kwargs)
 
-    def get(self):
+    def _get(self):
         return self.request.session.get(self.session_key, [])
 
-    def store(self, data, response):
+    def _store(self, data, response):
         if data:
             self.request.session[self.session_key] = data
         else:

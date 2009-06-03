@@ -11,11 +11,11 @@ from django_notify.storage.base import BaseStorage
 class CookieStorage(BaseStorage):
     cookie_name = 'notifications'
 
-    def get(self):
+    def _get(self):
         data = self.request.COOKIES.get(self.cookie_name)
         return self._decode(data)
 
-    def store(self, data, response):
+    def _store(self, data, response):
         if data:
             response.set_cookie(self.cookie_name, self._encode(data))
         else:
