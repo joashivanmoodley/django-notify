@@ -55,8 +55,7 @@ class BaseStorage(object):
         if self.used:
             self._store(self._new_data, response)
         if self.added_new:
-            data = self.data + self._new_data
-            self._store(data, response)
+            self._store(self.data+self._new_data, response)
 
     def add(self, message, tags='', **extras):
         if not message:
