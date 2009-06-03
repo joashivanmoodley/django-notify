@@ -21,19 +21,19 @@ class Notification(object):
 class BaseStorage(object):
     def __init__(self, request, *args, **kwargs):
         self.request = request
-        self.new_data = []
+        self._new_data = []
         self.used = False
         self.added_new = False
         super(BaseStorage, self).__init__(*args, **kwargs)
 
     def __len__(self):
-        return len(self.data) + len(self.new_data)
+        return len(self.data) + len(self._new_data)
 
     def __iter__(self):
         self.used = True
-        if self.new_data:
-            self.data.extend(self.new_data)
-            self.new_data = []
+        if self._new_data:
+            self.data.extend(self._new_data)
+            self._new_data = []
         return iter(self.data)
 
     def __contains__(self, item):
@@ -53,9 +53,9 @@ class BaseStorage(object):
 
     def update(self, response):
         if self.used:
-            self._store(self.new_data, response)
+            self._store(self._new_data, response)
         if self.added_new:
-            data = self.data + self.new_data
+            data = self.data + self._new_data
             self._store(data, response)
 
     def add(self, message, tags='', **extras):
@@ -63,4 +63,4 @@ class BaseStorage(object):
             return
         self.added_new = True
         notification = Notification(message, tags, extras)
-        self.data.append(notification)
+        self._new_data.append(notification)
