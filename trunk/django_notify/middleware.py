@@ -10,5 +10,8 @@ class NotificationsMiddleware(object):
         request.notifications = Storage(request)
 
     def process_response(self, request, response):
-        request.notifications.update(response)
+        # A higher middleware layer may return a request which does not contain
+        # notifications storage, so make no assumption that it will be there.
+        if hasattr(request, 'notifications'):
+            request.notifications.update(response)
         return response
