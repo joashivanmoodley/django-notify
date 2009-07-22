@@ -5,10 +5,10 @@ This is not a complete class, to be usable it should be subclassed and the
 two methods ``_get`` and ``_store`` overridden.
 '''
 
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_unicode, StrAndUnicode
 
 
-class Notification(object):
+class Notification(StrAndUnicode):
     def __init__(self, message, tags='', extras=None):
         self.message = message
         self.tags = tags
