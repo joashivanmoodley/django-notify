@@ -54,7 +54,7 @@ class BaseStorage(object):
     def update(self, response):
         if self.used:
             self._store(self._new_data, response)
-        if self.added_new:
+        elif self.added_new:
             self._store(self._data+self._new_data, response)
 
     def add(self, message, tags='', **extras):
