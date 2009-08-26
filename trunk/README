@@ -2,8 +2,8 @@
 Django Notify
 =============
 
-Provides a temporary (i.e. usually until the next request which retrieves them)
-notification list.
+A Django application which provides a temporary (i.e. usually until the next
+request which retrieves them) notification message list.
 
 
 Installation
@@ -39,7 +39,7 @@ represented as HTML classes for the message)::
     request.notifications.add('Your rating is over 9000!', 'error')
 
 Displaying temporary notifications
------------------------------------
+----------------------------------
 
 In your template (rendered with RequestContext or with
 ``request.notifications`` passed as ``notifications`` in its context) using
