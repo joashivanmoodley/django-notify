@@ -13,8 +13,8 @@ Add the following line to your ``MIDDLEWARE_CLASSES`` setting::
 
     'django_notify.middleware.NotificationsMiddleware',
 
-The default temporary storage uses sessions, so it is best to place this after
-the ``SessionMiddleware``.
+The default temporary storage relies on Django's ``contrib.sessions``
+application, so it is best to place this after the ``SessionMiddleware``.
 
 You can also install the context processor into your
 ``TEMPLATE_CONTEXT_PROCESSORS`` setting::
@@ -59,11 +59,11 @@ being cleared, you can set ``request.notifications.used = False`` after
 iterating.
 
 
-Temporary Storage
-=================
+Temporary Storage Backends
+==========================
 
-Django notify can use different types of temporary storage. To change which
-storage is being used, add a ``NOTIFICATIONS_STORAGE`` to your settings,
+Django notify can use different backends to store temporary messages. To change
+which backend is being used, add a ``NOTIFICATIONS_STORAGE`` to your settings,
 referencing to the module and class of the storage class. For example::
 
     NOTIFICATIONS_STORAGE = 'cookie.CookieStorage'
@@ -71,14 +71,26 @@ referencing to the module and class of the storage class. For example::
 Django Notify first looks for the module inside of ``django_notify.storage``,
 and if not found, tries to import the full given module directly.
 
-Two temporary storage classes are included in Django Notify:
+Three temporary storage backends are included in Django Notify:
 
 ``'session.SessionStorage'``
-    This is the default storage. It relies on Django's session.
+    This backend stores all messages inside of the request's session. It
+    required on Django's ``contrib.session`` application.
 
 ``'cookie.CookieStorage'``
-    This method stores the notification data in a cookie (signed with a secret
+    This backend stores the notification data in a cookie (signed with a secret
     hash to prevent manipulation) to persist notifications across requests.
+    Old messages are dropped if the cookie data size would exceed 4096 bytes.
+
+``'fallback.FallbackStorage'``
+	This is the default temporary storage backend.
+
+    This backend uses CookieStorage for all notification messages, falling back
+    to store messages which could not fit in a single cookie using
+    SessionStorage.
+
+    As it is uses SessionStorage, it also requires Django's ``contrib.session``
+    application. 
 
 To write your own, subclass the ``BaseStorage`` class in
-``django_notify.storage.base`` and write ``get`` and ``store`` methods.
+``django_notify.storage.base`` and write ``_get`` and ``_store`` methods.
