@@ -60,6 +60,9 @@ class BaseStorage(object):
         
         **This method must be implemented by a subclass.**
         
+        If it is possible to tell if the backend was not used (as opposed to
+        just containing no messages) then ``None`` should be returned.
+        
         """
         raise NotImplementedError()
 

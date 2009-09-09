@@ -2,6 +2,21 @@ from django_notify.tests.base import BaseTest
 from django_notify.storage.session import SessionStorage
 
 
+def set_session_data(storage, messages):
+    """
+    Set the messages into the backend request's session and remove the
+    backend's loaded data cache.
+    
+    """
+    storage.request.session[storage.session_key] = messages
+    if hasattr(storage, '_loaded_data'):
+        del storage._loaded_data
+
+def stored_session_messages_count(storage):
+    data = storage.request.session.get(storage.session_key, [])
+    return len(data)
+
+
 class SessionTest(BaseTest):
     storage_class = SessionStorage
 
@@ -11,9 +26,13 @@ class SessionTest(BaseTest):
         request.session = self.session
         return request
 
-    def check_store(self, storage, response):
-        data = self.session.get(storage.session_key, [])
-        return len(data)
+    def stored_messages_count(self, storage, response):
+        return stored_session_messages_count(storage)
 
     def test_get(self):
-        pass
+        storage = self.storage_class(self.get_request())
+        # Set initial data.
+        example_messages = ['test', 'me']
+        set_session_data(storage, example_messages)
+        # Test that the message actually contains what we expect.
+        self.assertEqual(list(storage), example_messages)
