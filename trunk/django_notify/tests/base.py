@@ -14,6 +14,15 @@ class BaseTest(unittest.TestCase):
         return http.HttpResponse()
 
     def get_storage(self, data=None):
+        """
+        Return the storage backend, setting it's loaded data to the ``data``
+        argument.
+        
+        This method avoids the storage ``_get`` method from getting called so
+        that other parts of the storage backend can be tested independent of
+        the message retrieval logic.
+        
+        """
         storage = self.storage_class(self.get_request())
         storage._loaded_data = data or []
         return storage
@@ -30,7 +39,7 @@ class BaseTest(unittest.TestCase):
         storage = self.get_storage()
         response = self.get_response()
         storage.update(response)
-        storing = self.check_store(storage, response)
+        storing = self.stored_messages_count(storage, response)
         self.assertEqual(storing, 0)
 
     def test_add_update(self):
@@ -41,7 +50,7 @@ class BaseTest(unittest.TestCase):
         storage.add('Test message 1', 'tag')
         storage.update(response)
 
-        storing = self.check_store(storage, response)
+        storing = self.stored_messages_count(storage, response)
         self.assertEqual(storing, 2)
 
     def test_existing_add_read_update(self):
@@ -52,7 +61,7 @@ class BaseTest(unittest.TestCase):
         list(storage)   # Simulates a read
         storage.update(response)
 
-        storing = self.check_store(storage, response)
+        storing = self.stored_messages_count(storage, response)
         self.assertEqual(storing, 0)
 
     def test_existing_read_add_update(self):
@@ -63,13 +72,14 @@ class BaseTest(unittest.TestCase):
         storage.add('Test message 3')        
         storage.update(response)
         
-        storing = self.check_store(storage, response)
+        storing = self.stored_messages_count(storage, response)
         self.assertEqual(storing, 1)
 
-    def check_store(self, storage, response):
+    def stored_messages_count(self, storage, response):
         """
         Returns the number of messages being stored after a
-        ``storage.update()`` call
+        ``storage.update()`` call.
+        
         """
         raise NotImplementedError('This method must be set by a subclass.')
 
@@ -83,7 +93,8 @@ class BaseTest(unittest.TestCase):
 
     def test_existing_read(self):
         """
-        Test that reading the existing 
+        Reading the existing storage doesn't cause the data to be lost.
+        
         """
         storage = self.get_existing_storage()
         self.assertFalse(storage.used)

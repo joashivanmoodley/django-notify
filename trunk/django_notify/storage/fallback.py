@@ -27,7 +27,7 @@ def strip_eof_messages(messages):
     stripped_messages = [message for message in messages
                          if not isinstance(message, EOFNotification)]
     found_eof = len(stripped_messages) != len(messages)
-    return stripped_messages, found_eof 
+    return stripped_messages, found_eof
 
 
 def attempt_store(storage, messages, response):
@@ -70,9 +70,13 @@ class FallbackStorage(BaseStorage):
         """
         all_messages = []
         for storage in self.storages:
-            messages = storage._get() or []
-            messages, eof = strip_eof_messages(messages)
+            messages, eof = strip_eof_messages(storage._get())
+            # If the backend hasn't been used, no more retrieval is necessary.
+            if messages is None:
+                break
             all_messages.extend(messages)
+            # If we hit an EOFNotification instance, no more retrieval is
+            # necessary.
             if eof:
                 break
         return all_messages

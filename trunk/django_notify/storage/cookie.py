@@ -48,7 +48,8 @@ class CookieStorage(BaseStorage):
                     unstored_messages.append(messages.pop(0))
                 else:
                     unstored_messages.insert(0, messages.pop())
-                encoded_data = self._encode(messages)
+                encoded_data = self._encode(messages,
+                                            encode_empty=unstored_messages)
         self._update_cookie(encoded_data, response)
         return unstored_messages
 
@@ -60,7 +61,7 @@ class CookieStorage(BaseStorage):
         """
         return sha1(value + settings.SECRET_KEY).hexdigest()
 
-    def _encode(self, messages):
+    def _encode(self, messages, encode_empty=False):
         """
         Return an encoded version of the messages list which can be stored as
         plain text.
@@ -69,7 +70,7 @@ class CookieStorage(BaseStorage):
         also contains a hash to ensure that the data was not tampered with.
         
         """
-        if messages:
+        if messages or encode_empty:
             value = pickle.dumps(messages, pickle.HIGHEST_PROTOCOL)
             return '%s$%s' % (self._hash(value), value)
 
