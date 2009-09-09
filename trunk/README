@@ -83,7 +83,7 @@ Three temporary storage backends are included in Django Notify:
     Old messages are dropped if the cookie data size would exceed 4096 bytes.
 
 ``'fallback.FallbackStorage'``
-	This is the default temporary storage backend.
+    This is the default temporary storage backend.
 
     This backend uses CookieStorage for all notification messages, falling back
     to store messages which could not fit in a single cookie using
