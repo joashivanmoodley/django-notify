@@ -54,7 +54,7 @@ class BaseStorage(object):
             self._loaded_data = self._get() or []
         return self._loaded_data
 
-    def _get(self):
+    def _get(self, *args, **kwargs):
         """
         Retrieve a list of stored messages.
         
@@ -63,7 +63,7 @@ class BaseStorage(object):
         """
         raise NotImplementedError()
 
-    def _store(self, messages, response):
+    def _store(self, messages, response, *args, **kwargs):
         """
         Store a list of messages, returning a list of any messages which could
         not be stored.
