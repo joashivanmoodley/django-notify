@@ -18,3 +18,22 @@ class CookieTest(BaseTest):
 
     def test_get(self):
         pass
+
+    def test_max_cookie_length(self):
+        """
+        If the data exceeds what is allowed in a cookie, older messages are
+        removed before saving (and returned by the ``update`` method).
+        
+        """
+        storage = self.get_storage()
+        response = self.get_response()
+
+        for i in range(5):
+            storage.add(str(i) * 900)
+        unstored_messages = storage.update(response)
+
+        cookie_storing = self.check_store(storage, response)
+        self.assertEqual(cookie_storing, 4)
+
+        self.assertEqual(len(unstored_messages), 1)
+        self.assert_(unstored_messages[0].message == '0' * 900)
