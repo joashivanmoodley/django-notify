@@ -1,5 +1,5 @@
 from django_notify.tests.base import BaseTest
-from django_notify.storage.fallback import FallbackStorage
+from django_notify.storage.fallback import FallbackStorage, EOFNotification
 
 
 class FallbackTest(BaseTest):
@@ -29,8 +29,15 @@ class FallbackTest(BaseTest):
         return len(data)
 
     def check_store(self, storage, response):
-        return self.check_cookie_store(storage, response) + \
-               self.check_session_store(storage, response)
+        """
+        Return the storage totals from both cookie and session backends,
+        subtracting 1 for the EOF.
+        """
+        total = (self.check_cookie_store(storage, response) +
+                 self.check_session_store(storage, response))
+        if total:
+            total -= 1
+        return total
 
     def test_get(self):
         pass
@@ -44,12 +51,16 @@ class FallbackTest(BaseTest):
         storage = self.get_storage()
         response = self.get_response()
 
+        # Overwrite the _store method of the second storage to prove it is not
+        # used (it would cause a TypeError: 'NoneType' object is not callable)
+        storage.storages[1]._store = None
+
         for i in range(5):
             storage.add(str(i) * 100)
         storage.update(response)
 
         cookie_storing = self.check_cookie_store(storage, response)
-        self.assertEqual(cookie_storing, 5)
+        self.assertEqual(cookie_storing, 6)   # 5 + EOF
         session_storing = self.check_session_store(storage, response)
         self.assertEqual(session_storing, 0)
 
@@ -69,4 +80,7 @@ class FallbackTest(BaseTest):
         cookie_storing = self.check_cookie_store(storage, response)
         self.assertEqual(cookie_storing, 4)
         session_storing = self.check_session_store(storage, response)
-        self.assertEqual(session_storing, 1)
+        self.assertEqual(session_storing, 2)   # 1 remaining + EOF
+        storage = storage.storages[1]
+        data = self.session.get(storage.session_key, [])
+        self.assert_(isinstance(data[-1], EOFNotification))

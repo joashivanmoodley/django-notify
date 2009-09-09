@@ -12,7 +12,7 @@ class CookieStorage(BaseStorage):
     cookie_name = 'notifications'
     max_cookie_size = 4096
 
-    def _get(self):
+    def _get(self, *args, **kwargs):
         """
         Retrieve a list of messages from the notifications cookie.
         
@@ -31,21 +31,23 @@ class CookieStorage(BaseStorage):
         else:
             response.delete_cookie(self.cookie_name)
         
-    def _store(self, messages, response):
+    def _store(self, messages, response, remove_oldest=True, *args, **kwargs):
         """
         Store the messages to a cookie, returning a list of any messages which
         could not be stored.
         
-        If the encoded data is larger than ``max_cookie_size``, remove the
-        oldest messages until the data fits (these are the messages which are
-        returned).
+        If the encoded data is larger than ``max_cookie_size``, remove messages
+        until the data fits (these are the messages which are returned).
         
         """
         unstored_messages = []
         encoded_data = self._encode(messages)
         if self.max_cookie_size:
             while encoded_data and len(encoded_data) > self.max_cookie_size:
-                unstored_messages.append(messages.pop(0))
+                if remove_oldest:
+                    unstored_messages.append(messages.pop(0))
+                else:
+                    unstored_messages.insert(0, messages.pop())
                 encoded_data = self._encode(messages)
         self._update_cookie(encoded_data, response)
         return unstored_messages
