@@ -1,6 +1,6 @@
 import unittest
 from django import http
-from django_notify.storage import get_storage, Storage
+from django_notify.storage import Storage
 from django_notify.storage.base import Notification
 
 
@@ -49,7 +49,7 @@ class BaseTest(unittest.TestCase):
         response = self.get_response()
         
         storage.add('Test message 3')
-        data = list(storage)   # Simulates a read
+        list(storage)   # Simulates a read
         storage.update(response)
 
         storing = self.check_store(storage, response)
@@ -59,7 +59,7 @@ class BaseTest(unittest.TestCase):
         storage = self.get_existing_storage()
         response = self.get_response()
         
-        data = list(storage)   # Simulates a read
+        list(storage)   # Simulates a read
         storage.add('Test message 3')        
         storage.update(response)
         

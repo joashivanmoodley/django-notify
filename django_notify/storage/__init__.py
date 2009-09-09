@@ -21,4 +21,4 @@ def get_storage(import_name):
 
 
 Storage = get_storage(getattr(settings, 'NOTIFICATIONS_STORAGE',
-                              'session.SessionStorage'))
+                              'fallback.FallbackStorage'))
