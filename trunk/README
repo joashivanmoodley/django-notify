@@ -75,7 +75,7 @@ Three temporary storage backends are included in Django Notify:
 
 ``'session.SessionStorage'``
     This backend stores all messages inside of the request's session. It
-    required on Django's ``contrib.session`` application.
+    requires Django's ``contrib.session`` application.
 
 ``'cookie.CookieStorage'``
     This backend stores the notification data in a cookie (signed with a secret
@@ -86,11 +86,11 @@ Three temporary storage backends are included in Django Notify:
     This is the default temporary storage backend.
 
     This backend uses CookieStorage for all notification messages, falling back
-    to store messages which could not fit in a single cookie using
-    SessionStorage.
+    to using SessionStorage for the messages which could not fit in a single
+    cookie.
 
-    As it is uses SessionStorage, it also requires Django's ``contrib.session``
-    application. 
+    Since it is uses SessionStorage, it also requires Django's
+    ``contrib.session`` application. 
 
 To write your own, subclass the ``BaseStorage`` class in
 ``django_notify.storage.base`` and write ``_get`` and ``_store`` methods.
