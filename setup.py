@@ -19,8 +19,7 @@ setup(
     ],
     author='Chris Beaven',
     author_email='smileychris@gmail.com',
-    description='A Django application which provides a temporary notification '
-        'message list.',
+    description='A Django application which provides temporary notifications.',
     long_description=long_description,
     classifiers=[
         'Development Status :: 4 - Beta',
