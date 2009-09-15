@@ -11,6 +11,18 @@ class Notification(StrAndUnicode):
         self.tags = tags
         self.extras = extras or {}
 
+    def _prepare(self):
+        """
+        Prepare the notification for serialization by forcing the ``message``
+        and ``tags`` to unicode in case they are lazy translations.
+        
+        Known "safe" types (None, int, etc.) are not converted (see Django's
+        ``force_unicode`` implementation for details).
+        
+        """
+        self.message = force_unicode(self.message, strings_only=True)
+        self.tags = force_unicode(self.tags, strings_only=True)
+
     def __unicode__(self):
         return force_unicode(self.message)
 
@@ -23,6 +35,8 @@ class BaseStorage(object):
     subclassed and the two methods ``_get`` and ``_store`` overridden.
     
     """
+    store_serialized = True
+
     def __init__(self, request, *args, **kwargs):
         self.request = request
         self._queued_messages = []
@@ -76,6 +90,15 @@ class BaseStorage(object):
         """
         raise NotImplementedError()
 
+    def _prepare_notifications(self, notifications):
+        """
+        Prepare a list of notifications for storage.
+        
+        """
+        if self.store_serialized:
+            for notification in notifications:
+                notification._prepare()
+
     def update(self, response, fail_silently=True):
         """
         Store all unread messages.
@@ -86,10 +109,12 @@ class BaseStorage(object):
         
         """
         if self.used:
+            self._prepare_notifications(self._queued_messages)
             return self._store(self._queued_messages, response)
         elif self.added_new:
-            return self._store(self._loaded_messages + self._queued_messages,
-                               response)
+            notifications = self._loaded_messages + self._queued_messages
+            self._prepare_notifications(notifications)
+            return self._store(notifications, response)
 
     def add(self, message, tags='', **extras):
         """

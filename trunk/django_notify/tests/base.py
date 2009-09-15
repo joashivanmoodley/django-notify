@@ -1,5 +1,6 @@
 import unittest
 from django import http
+from django.utils.translation import ugettext_lazy
 from django_notify.storage import Storage
 from django_notify.storage.base import Notification
 
@@ -34,6 +35,16 @@ class BaseTest(unittest.TestCase):
         self.assert_(storage.added_new)
         storage.add('Test message 2', 'tag')
         self.assertEqual(len(storage), 2)
+
+    def test_add_lazy_translation(self):
+        storage = self.get_storage()
+        response = self.get_response()
+
+        storage.add(ugettext_lazy('lazy message'))
+        storage.update(response)
+
+        storing = self.stored_messages_count(storage, response)
+        self.assertEqual(storing, 1)
 
     def test_no_update(self):
         storage = self.get_storage()
