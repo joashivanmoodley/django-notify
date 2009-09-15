@@ -2,7 +2,7 @@
 Django Notify
 =============
 
-A Django application which provides a temporary notifications.
+A Django application which provides temporary notifications.
 
 Notification messages persist until a request retrieves them.
 
