@@ -1,14 +1,6 @@
-from django_notify.storage.base import BaseStorage
+from django_notify.storage.base import BaseStorage, EOFNotification
 from django_notify.storage.cookie import CookieStorage
 from django_notify.storage.session import SessionStorage
-
-
-class EOFNotification:
-    """
-    A notification class which indicates the end of the message stream (i.e. no
-    further message retrieval is required).
-    
-    """
 
 
 def strip_eof_messages(messages):
