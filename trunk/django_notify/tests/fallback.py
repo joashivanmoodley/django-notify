@@ -1,4 +1,5 @@
-from django_notify.storage.fallback import FallbackStorage, EOFNotification
+from django_notify.storage.base import EOFNotification
+from django_notify.storage.fallback import FallbackStorage
 from django_notify.tests.base import BaseTest
 from django_notify.tests.cookie import set_cookie_data, \
     stored_cookie_messages_count

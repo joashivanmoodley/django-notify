@@ -1,7 +1,57 @@
-import pickle
 from hashlib import sha1
 from django.conf import settings
-from django_notify.storage.base import BaseStorage
+from django_notify.storage.base import BaseStorage, Notification, \
+                                       EOFNotification
+try:
+    import json   # Available in Python 2.6.
+except ImportError:
+    # Otherwise fall back to simplejson bundled with Django.
+    from django.utils import simplejson as json
+
+
+class NotificationEncoder(json.JSONEncoder):
+    """
+    A JSON encoder which also compactly serializes ``Notification`` and
+    ``EOFNotification`` classes.
+    
+    """
+    notification_key = '__json_notification'
+    notification_eof_key = '__json_notification_eof'
+
+    def default(self, obj):
+        if isinstance(obj, Notification):
+            notification = [self.notification_key, obj.message]
+            if obj.tags or obj.extras:
+                notification.append(obj.tags)
+                if obj.extras:
+                    notification.append(obj.extras)
+            return notification
+        if isinstance(obj, EOFNotification):
+            return [self.notification_eof_key]
+        return super(NotificationEncoder, self).default(obj)
+
+
+class NotificationDecoder(json.JSONDecoder):
+    """
+    A JSON decoder which additionally supports serialized ``Notification`` and
+    ``EOFNotification`` classes.
+    
+    """
+    def process_notifications(self, obj):
+        if isinstance(obj, list) and obj:
+            if obj[0] == NotificationEncoder.notification_key: 
+                return Notification(*obj[1:])
+            if NotificationEncoder.notification_eof_key in obj:
+                return EOFNotification()
+            return [self.process_notifications(item) for item in obj]
+        if isinstance(obj, dict):
+            return dict([(key, self.process_notifications(value))
+                         for key, value in obj.iteritems()])
+        return obj
+
+    def decode(self, s, **kwargs):
+        decoded = super(NotificationDecoder, self).decode(s, **kwargs)
+        return self.process_notifications(decoded)
 
 
 class CookieStorage(BaseStorage):
@@ -30,7 +80,7 @@ class CookieStorage(BaseStorage):
             response.set_cookie(self.cookie_name, encoded_data)
         else:
             response.delete_cookie(self.cookie_name)
-        
+
     def _store(self, messages, response, remove_oldest=True, *args, **kwargs):
         """
         Store the messages to a cookie, returning a list of any messages which
@@ -71,7 +121,7 @@ class CookieStorage(BaseStorage):
         
         """
         if messages or encode_empty:
-            value = pickle.dumps(messages, pickle.HIGHEST_PROTOCOL)
+            value = json.dumps(messages, cls=NotificationEncoder)
             return '%s$%s' % (self._hash(value), value)
 
     def _decode(self, data):
@@ -89,9 +139,9 @@ class CookieStorage(BaseStorage):
             hash, value = bits
             if hash == self._hash(value):
                 try:
-                    # If we get here (and the pickle works), everything is
+                    # If we get here (and the json decode works), everything is
                     # good. In any other case, drop back and return None.
-                    return pickle.loads(value)
+                    return json.loads(value, cls=NotificationDecoder)
                 except:
                     pass
         # Mark the data as used (so it gets removed) since something was wrong

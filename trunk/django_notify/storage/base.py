@@ -6,9 +6,9 @@ class Notification(StrAndUnicode):
     A notification message.
     
     """
-    def __init__(self, message, tags='', extras=None):
+    def __init__(self, message, tags=None, extras=None):
         self.message = message
-        self.tags = tags
+        self.tags = tags or ''
         self.extras = extras or {}
 
     def _prepare(self):
@@ -25,6 +25,16 @@ class Notification(StrAndUnicode):
 
     def __unicode__(self):
         return force_unicode(self.message)
+
+
+class EOFNotification:
+    """
+    A notification class which indicates the end of the message stream (i.e. no
+    further message retrieval is required).
+    
+    Not used in all storage classes.
+    
+    """
 
 
 class BaseStorage(object):
