@@ -121,7 +121,8 @@ class CookieStorage(BaseStorage):
         
         """
         if messages or encode_empty:
-            value = json.dumps(messages, cls=NotificationEncoder)
+            encoder = NotificationEncoder(separators=(',', ':'))
+            value = encoder.encode(messages)
             return '%s$%s' % (self._hash(value), value)
 
     def _decode(self, data):
