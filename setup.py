@@ -11,7 +11,7 @@ finally:
 
 setup(
     name='django-notify',
-    version='1.0.2pre',
+    version='1.0.4pre',
     packages=[
         'django_notify',
         'django_notify.storage',
