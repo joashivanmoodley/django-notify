@@ -1,5 +1,6 @@
 from hashlib import sha1
 from django.conf import settings
+from django_notify import constants
 from django_notify.storage.base import BaseStorage, Notification, \
                                        EOFNotification
 try:
@@ -21,10 +22,11 @@ class NotificationEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Notification):
             notification = [self.notification_key, obj.message]
-            if obj.tags or obj.extras:
-                notification.append(obj.tags)
-                if obj.extras:
-                    notification.append(obj.extras)
+            default_level = obj.level == constants.INFO
+            if default_level or obj.extra_tags:
+                notification.append(obj.level)
+                if obj.extra_tags:
+                    notification.append(obj.extra_tags)
             return notification
         if isinstance(obj, EOFNotification):
             return [self.notification_eof_key]
@@ -140,7 +142,7 @@ class CookieStorage(BaseStorage):
             hash, value = bits
             if hash == self._hash(value):
                 try:
-                    # If we get here (and the json decode works), everything is
+                    # If we get here (and the JSON decode works), everything is
                     # good. In any other case, drop back and return None.
                     return json.loads(value, cls=NotificationDecoder)
                 except:
