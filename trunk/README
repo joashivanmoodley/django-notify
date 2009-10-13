@@ -77,17 +77,17 @@ The ``NOTIFICATIONS_LEVEL`` setting can be used to change the minimum recorded
 level. Attempts to add notifications of a level less than this will be ignored.
 
 The built-in levels (which can be imported from ``django_notify`` directly)
-are::
+are:
 
-========  =====  ===========
-Constant  Level  Default Tag
-========  =====  ===========
-DEBUG     10     'debug'
-INFO      20     ''
-SUCCESS   25     'success'
-WARNING   30     'warning'
-ERROR     40     'error'
-========  =====  ===========
+===========  =====  ===========
+Constant     Level  Default Tag
+===========  =====  ===========
+``DEBUG``    10     ``debug``
+``INFO``     20     
+``SUCCESS``  25     ``success``
+``WARNING``  30     ``warning``
+``ERROR``    40     ``error``
+===========  =====  ===========
 
 ``INFO`` is the default minimum recorded level. It is also the
 default level of the ``add`` method.
