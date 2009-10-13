@@ -1,4 +1,9 @@
+from django.conf import settings
 from django.utils.encoding import force_unicode, StrAndUnicode
+from django_notify import constants, utils
+
+
+LEVEL_TAGS = utils.get_level_tags()
 
 
 class Notification(StrAndUnicode):
@@ -6,10 +11,13 @@ class Notification(StrAndUnicode):
     A notification message.
     
     """
-    def __init__(self, message, tags=None, extras=None):
+    def __init__(self, message, level=None, extra_tags=None):
         self.message = message
-        self.tags = tags or ''
-        self.extras = extras or {}
+        self.extra_tags = extra_tags
+        if level is None:
+            self.level = constants.INFO
+        else:
+            self.level = int(level)
 
     def _prepare(self):
         """
@@ -21,10 +29,21 @@ class Notification(StrAndUnicode):
         
         """
         self.message = force_unicode(self.message, strings_only=True)
-        self.tags = force_unicode(self.tags, strings_only=True)
 
     def __unicode__(self):
         return force_unicode(self.message)
+
+    def _get_tags(self):
+        label_tag = force_unicode(LEVEL_TAGS.get(self.level, ''),
+                                  strings_only=True)
+        extra_tags = force_unicode(self.extra_tags, strings_only=True)
+        if extra_tags:
+            if label_tag:
+                return u'%s %s' % (extra_tags, label_tag)
+            return extra_tags
+        return label_tag or ''
+
+    tags = property(_get_tags)
 
 
 class EOFNotification:
@@ -126,13 +145,82 @@ class BaseStorage(object):
             self._prepare_notifications(notifications)
             return self._store(notifications, response)
 
-    def add(self, message, tags='', **extras):
+    def add(self, message, level=None, extra_tags=''):
         """
         Queue a message to be stored.
+        
+        The message is only queued if it contained something and its level is
+        not less than the recording level (``self.level``).
         
         """
         if not message:
             return
+        # Check that the message level is not less than the recording level.
+        if level is None:
+            level = constants.INFO
+        else:
+            level = int(level)
+        if level < self.level:
+            return
+        # Add the message.
         self.added_new = True
-        notification = Notification(message, tags, extras)
+        notification = Notification(message, level=level,
+                                    extra_tags=extra_tags)
         self._queued_messages.append(notification)
+
+    def debug(self, message, extra_tags=''):
+        """
+        Helper method to add a message with the DEBUG level.
+        
+        """
+        self.add(message, level=constants.DEBUG, extra_tags=extra_tags)
+
+    def success(self, message, extra_tags=''):
+        """
+        Helper method to add a message with the ``SUCCESS`` level.
+        
+        """
+        self.add(message, level=constants.SUCCESS, extra_tags=extra_tags)
+
+    def warning(self, message, extra_tags=''):
+        """
+        Helper method to add a message with the ``WARNING`` level.
+        
+        """
+        self.add(message, level=constants.WARNING, extra_tags=extra_tags)
+
+    def error(self, message, extra_tags=''):
+        """
+        Helper method to add a message with the ``ERROR`` level.
+        
+        """
+        self.add(message, level=constants.ERROR, extra_tags=extra_tags)
+
+    def _get_level(self):
+        """
+        Return the minimum recorded level.
+        
+        The default level is the ``NOTIFICATIONS_LEVEL`` setting. If this is
+        not found, the ``INFO`` level is used.
+        
+        """
+        if not hasattr(self, '_level'):
+            self._level = getattr(settings, 'NOTIFICATIONS_LEVEL',
+                                  constants.INFO)
+        return self._level
+
+    def _set_level(self, value=None):
+        """
+        Set a custom minimum recorded level.
+        
+        If set to ``None``, the default level will be used (see the
+        ``_get_level`` method).
+        
+        """
+        if value is None:
+            if hasattr(self, '_level'):
+                del self._level
+        else:
+            self._level = int(value)
+
+    level = property(_get_level, _set_level, _set_level)
