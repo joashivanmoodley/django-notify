@@ -114,6 +114,9 @@ class BaseStorage(object):
         Store a list of messages, returning a list of any messages which could
         not be stored.
         
+        Two types of objects must be able to be stored, ``Notification`` and
+        ``EOFNotification``.
+        
         **This method must be implemented by a subclass.**
         
         """
