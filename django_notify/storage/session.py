@@ -18,7 +18,7 @@ class SessionStorage(BaseStorage):
         Retrieve a list of messages from the request's session.
         
         """
-        return self.request.session.get(self.session_key, [])
+        return self.request.session.get(self.session_key)
 
     def _store(self, messages, response, *args, **kwargs):
         """

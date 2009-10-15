@@ -1,6 +1,10 @@
 from django_notify.storage.base import BaseStorage, EOFNotification
 from django_notify.storage.cookie import CookieStorage
 from django_notify.storage.session import SessionStorage
+try:
+    set
+except NameError:
+    from sets import Set as set   # Python 2.3
 
 
 def strip_eof_messages(messages):
@@ -54,6 +58,7 @@ class FallbackStorage(BaseStorage):
         super(FallbackStorage, self).__init__(*args, **kwargs)
         self.storages = [storage_class(*args, **kwargs)
                          for storage_class in self.storage_classes]
+        self._used_storages = set()
 
     def _get(self, *args, **kwargs):
         """
@@ -66,6 +71,8 @@ class FallbackStorage(BaseStorage):
             # If the backend hasn't been used, no more retrieval is necessary.
             if messages is None:
                 break
+            if messages:
+                self._used_storages.add(storage)
             all_messages.extend(messages)
             # If we hit an EOFNotification instance, no more retrieval is
             # necessary.
@@ -85,10 +92,14 @@ class FallbackStorage(BaseStorage):
         messages = strip_eof_messages(messages)[0] or []
         messages.append(EOFNotification())
         for storage in self.storages:
-            messages = attempt_store(storage, messages, response)
-            # If there are no more messages, we don't need to continue storing.
-            if not messages:
-                break
+            if messages:
+                messages = attempt_store(storage, messages, response)
+            # Even if there are no more messages, continue iterating to ensure
+            # storages which contained messages are flushed.
+            elif storage in self._used_storages:
+                storage._store([], response)
+                self._used_storages.remove(storage)
+
         # Strip any EOF notifications before we return any unstored messages
         # since it is specific to this backend.
         messages = strip_eof_messages(messages)[0]
