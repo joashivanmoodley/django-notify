@@ -16,11 +16,18 @@ class FallbackTest(BaseTest):
         request.session = self.session
         return request
 
+    def get_cookie_storage(self, storage):
+        return storage.storages[-2]
+
+    def get_session_storage(self, storage):
+        return storage.storages[-1]
+
     def stored_cookie_messages_count(self, storage, response):
-        return stored_cookie_messages_count(storage.storages[0], response)
+        return stored_cookie_messages_count(self.get_cookie_storage(storage),
+                                            response)
 
     def stored_session_messages_count(self, storage, response):
-        return stored_session_messages_count(storage.storages[1])
+        return stored_session_messages_count(self.get_session_storage(storage))
 
     def stored_messages_count(self, storage, response):
         """
@@ -37,15 +44,15 @@ class FallbackTest(BaseTest):
     def test_get(self):
         request = self.get_request()
         storage = self.storage_class(request)
-        cookie_storage = storage.storages[0]
+        cookie_storage = self.get_cookie_storage(storage)
 
         # Set initial cookie data.
         example_messages = [str(i) for i in range(5)]
         set_cookie_data(cookie_storage, example_messages + [EOFNotification()])
 
-        # Overwrite the _get method of the second storage to prove it is not
+        # Overwrite the _get method of the fallback storage to prove it is not
         # used (it would cause a TypeError: 'NoneType' object is not callable).
-        storage.storages[1]._get = None
+        self.get_session_storage(storage)._get = None
 
         # Test that the message actually contains what we expect.
         self.assertEqual(list(storage), example_messages)
@@ -54,9 +61,9 @@ class FallbackTest(BaseTest):
         request = self.get_request()
         storage = self.storage_class(request)
 
-        # Overwrite the _get method of the second storage to prove it is not
+        # Overwrite the _get method of the fallback storage to prove it is not
         # used (it would cause a TypeError: 'NoneType' object is not callable).
-        storage.storages[1]._get = None
+        self.get_session_storage(storage)._get = None
 
         # Test that the message actually contains what we expect.
         self.assertEqual(list(storage), [])
@@ -64,7 +71,8 @@ class FallbackTest(BaseTest):
     def test_get_fallback(self):
         request = self.get_request()
         storage = self.storage_class(request)
-        cookie_storage, session_storage = storage.storages
+        cookie_storage = self.get_cookie_storage(storage)
+        session_storage = self.get_session_storage(storage)
 
         # Set initial cookie and session data.
         example_messages = [str(i) for i in range(5)]
@@ -79,7 +87,8 @@ class FallbackTest(BaseTest):
     def test_get_fallback_only(self):
         request = self.get_request()
         storage = self.storage_class(request)
-        cookie_storage, session_storage = storage.storages
+        cookie_storage = self.get_cookie_storage(storage)
+        session_storage = self.get_session_storage(storage)
 
         # Set initial cookie and session data.
         example_messages = [str(i) for i in range(5)]
@@ -93,7 +102,8 @@ class FallbackTest(BaseTest):
     def test_flush_used_backends(self):
         request = self.get_request()
         storage = self.storage_class(request)
-        cookie_storage, session_storage = storage.storages
+        cookie_storage = self.get_cookie_storage(storage)
+        session_storage = self.get_session_storage(storage)
 
         # Set initial cookie and session data.
         set_cookie_data(cookie_storage, ['cookie'])
@@ -119,9 +129,9 @@ class FallbackTest(BaseTest):
         storage = self.get_storage()
         response = self.get_response()
 
-        # Overwrite the _store method of the second storage to prove it is not
+        # Overwrite the _store method of the fallback storage to prove it is not
         # used (it would cause a TypeError: 'NoneType' object is not callable).
-        storage.storages[1]._store = None
+        self.get_session_storage(storage)._store = None
 
         for i in range(5):
             storage.add(str(i) * 100)
@@ -150,7 +160,7 @@ class FallbackTest(BaseTest):
         session_storing = self.stored_session_messages_count(storage, response)
         self.assertEqual(session_storing, 2)   # 1 remaining + EOF
 
-        session_messages = list(storage.storages[1])
+        session_messages = list(self.get_session_storage(storage))
         self.assert_(isinstance(session_messages[-1], EOFNotification))
 
     def test_session_fallback_only(self):
@@ -170,5 +180,5 @@ class FallbackTest(BaseTest):
         session_storing = self.stored_session_messages_count(storage, response)
         self.assertEqual(session_storing, 2)   # 1 message + EOF
 
-        session_messages = list(storage.storages[1])
+        session_messages = list(self.get_session_storage(storage))
         self.assert_(isinstance(session_messages[-1], EOFNotification))
