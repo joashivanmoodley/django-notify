@@ -1,0 +1,165 @@
+=============
+Django Notify
+=============
+
+A Django application which provides temporary notifications.
+
+Notification messages persist until a request retrieves them.
+
+
+Installation
+============
+
+Add the middleware to your ``MIDDLEWARE_CLASSES`` setting (the default
+temporary storage relies on Django's ``contrib.sessions`` application, so place
+this after ``SessionMiddleware``)::
+
+    'django_notify.middleware.NotificationsMiddleware',
+
+To make it easy to access notifications in templates, add the context processor
+into your ``TEMPLATE_CONTEXT_PROCESSORS`` setting::
+
+    'django_notify.context_processors.notifications',
+
+
+Usage
+=====
+
+Adding a notification message
+-----------------------------
+
+The middleware attaches an instance of a temporary storage class called
+``notifications`` to your ``request``. To add a notification, call::
+
+    request.notifications.add('Hello world.')
+
+Some other methods provide a standard way to add notifications with commonly
+used tags (which are usually represented as HTML classes for the message)::
+
+    request.notifications.debug('%s SQL statements were executed.' % count)
+    request.notifications.success('Profile details updated.')
+    request.notifications.warning('Your account expires in three days.')
+    request.notifications.error('Document deleted.')
+
+
+Displaying notification messages
+--------------------------------
+
+In your template, use something like::
+
+	{% if notifications %}
+	<ul class="messages">
+		{% for message in notifications %}
+		<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+		{% endfor %}
+	</ul>
+	{% endif %}
+
+If you're using the context processor, your template should be rendered with a
+``RequestContext``. Otherwise, ensure ``request.notifications`` is available to
+the template context.
+
+
+Expiration of notification messages
+-----------------------------------
+
+The notifications are marked to be cleared when the storage instance is
+iterated (and cleared when the response is processed).
+
+To avoid the notifications being cleared, you can set
+``request.notifications.used = False`` after iterating.
+
+
+Notification Levels
+-------------------
+
+The ``NOTIFICATIONS_LEVEL`` setting can be used to change the minimum recorded
+level. Attempts to add notifications of a level less than this will be ignored.
+
+The built-in levels (which can be imported from ``django_notify`` directly)
+are:
+
+===========  =====  ===========
+Constant     Level  Default Tag
+===========  =====  ===========
+``DEBUG``    10     ``debug``
+``INFO``     20     
+``SUCCESS``  25     ``success``
+``WARNING``  30     ``warning``
+``ERROR``    40     ``error``
+===========  =====  ===========
+
+``INFO`` is the default minimum recorded level. It is also the
+default level of the ``add`` method.
+
+The minimum recorded level can also be set per request by changing the
+``level`` attribute of the notifications storage instance::
+
+    import django_notify
+    
+    # Change the notifications level to ensure the debug message is added.
+    request.notifications.level = django_notify.DEBUG
+    request.notifications.debug('Test notification...')
+    
+    # Set the notifications level back to default.
+    request.notifications.level = None
+
+
+Custom Tags
+-----------
+
+To provide custom tags for notification levels (either built in levels or
+custom ones), set the ``NOTIFICATIONS_TAGS`` setting to a dictionary
+containing the levels you wish to change. As this extends the default tags,
+you only need to provide tags for the levels you wish to override::
+
+    import django_notify
+    NOTIFICATIONS_TAGS = {
+        django_notify.INFO: 'info',
+        50: 'critical',
+    }
+
+For more direct control over message tags, you can optionally provide a string
+containing extra tags to any of the add methods::
+
+    request.notifications.add('Over 9000!', extra_tags='dragonball')
+    request.notifications.error('Email box full', extra_tags='email')
+
+Extra tags are added before any default tag for that level (space separated).
+
+
+Temporary Storage Backends
+==========================
+
+Django notify can use different backends to store temporary messages. To change
+which backend is being used, add a ``NOTIFICATIONS_STORAGE`` to your settings,
+referencing to the module and class of the storage class. For example::
+
+    NOTIFICATIONS_STORAGE = 'cookie.CookieStorage'
+
+Django Notify first looks for the module inside of ``django_notify.storage``,
+and if not found, tries to import the full given module directly.
+
+Three temporary storage classes are included in Django Notify:
+
+``'session.SessionStorage'``
+    This class stores all messages inside of the request's session. It
+    requires Django's ``contrib.session`` application.
+
+``'cookie.CookieStorage'``
+    This class stores the notification data in a cookie (signed with a secret
+    hash to prevent manipulation) to persist notifications across requests.
+    Old messages are dropped if the cookie data size would exceed 4096 bytes.
+
+``'fallback.FallbackStorage'``
+    This is the default temporary storage class.
+
+    This class uses CookieStorage for all notification messages, falling back
+    to using SessionStorage for the messages which could not fit in a single
+    cookie.
+
+    Since it is uses SessionStorage, it also requires Django's
+    ``contrib.session`` application. 
+
+To write your own, subclass the ``BaseStorage`` class in
+``django_notify.storage.base`` and write ``_get`` and ``_store`` methods.
