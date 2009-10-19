@@ -31,7 +31,7 @@ Adding a message
 The middleware attaches an instance of a temporary storage class called
 ``messages`` to your ``request``. To add a message, call::
 
-    request.messages.add('Hello world.')
+    request.messages.add(messages.INFO, 'Hello world.')
 
 Some other methods provide a standard way to add messages with commonly
 used tags (which are usually represented as HTML classes for the message)::
@@ -122,7 +122,7 @@ you only need to provide tags for the levels you wish to override::
 For more direct control over message tags, you can optionally provide a string
 containing extra tags to any of the add methods::
 
-    request.messages.add('Over 9000!', extra_tags='dragonball')
+    request.messages.add(messages.INFO, 'Over 9000!', extra_tags='dragonball')
     request.messages.error('Email box full', extra_tags='email')
 
 Extra tags are added before any default tag for that level (space separated).
