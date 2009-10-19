@@ -6,6 +6,9 @@ A Django application which provides temporary messages.
 
 Messages persist until a request retrieves them.
 
+This application is heavily based on django_notify by Chris Beaven:
+http://code.google.com/p/django-notify/
+
 
 Installation
 ============
