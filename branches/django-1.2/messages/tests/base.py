@@ -1,11 +1,11 @@
-from django_notify import constants
+from django.contrib.messages import constants
 import unittest
 from django import http
 from django.conf import settings
 from django.utils.translation import ugettext_lazy
-from django_notify import utils
-from django_notify.storage import Storage, base
-from django_notify.storage.base import Notification
+from django.contrib.messages import utils
+from django.contrib.messages.storage import Storage, base
+from django.contrib.messages.storage.base import Message
 
 
 def add_level_messages(storage):
@@ -14,8 +14,8 @@ def add_level_messages(storage):
     instance.
     
     """
-    storage.add('A generic message')
-    storage.add('Some custom level', level=29)
+    storage.add(constants.INFO, 'A generic info message')
+    storage.add(29, 'Some custom level')
     storage.debug('A debugging message', extra_tags='extra-tag')
     storage.warning('A warning')
     storage.error('An error')
@@ -24,7 +24,7 @@ def add_level_messages(storage):
 
 class BaseTest(unittest.TestCase):
     storage_class = Storage
-    restore_settings = ['NOTIFICATIONS_LEVEL', 'NOTIFICATIONS_TAGS']
+    restore_settings = ['MESSAGES_LEVEL', 'MESSAGES_TAGS']
 
     def setUp(self):
         self._remembered_settings = {}
@@ -67,16 +67,16 @@ class BaseTest(unittest.TestCase):
     def test_add(self):
         storage = self.get_storage()
         self.assertFalse(storage.added_new)
-        storage.add('Test message 1')
+        storage.add(constants.INFO, 'Test message 1')
         self.assert_(storage.added_new)
-        storage.add('Test message 2', extra_tags='tag')
+        storage.add(constants.INFO, 'Test message 2', extra_tags='tag')
         self.assertEqual(len(storage), 2)
 
     def test_add_lazy_translation(self):
         storage = self.get_storage()
         response = self.get_response()
 
-        storage.add(ugettext_lazy('lazy message'))
+        storage.add(constants.INFO, ugettext_lazy('lazy message'))
         storage.update(response)
 
         storing = self.stored_messages_count(storage, response)
@@ -93,8 +93,8 @@ class BaseTest(unittest.TestCase):
         storage = self.get_storage()
         response = self.get_response()
 
-        storage.add('Test message 1')
-        storage.add('Test message 1', extra_tags='tag')
+        storage.add(constants.INFO, 'Test message 1')
+        storage.add(constants.INFO, 'Test message 1', extra_tags='tag')
         storage.update(response)
 
         storing = self.stored_messages_count(storage, response)
@@ -104,7 +104,7 @@ class BaseTest(unittest.TestCase):
         storage = self.get_existing_storage()
         response = self.get_response()
 
-        storage.add('Test message 3')
+        storage.add(constants.INFO, 'Test message 3')
         list(storage)   # Simulates a read
         storage.update(response)
 
@@ -116,7 +116,7 @@ class BaseTest(unittest.TestCase):
         response = self.get_response()
 
         list(storage)   # Simulates a read
-        storage.add('Test message 3')
+        storage.add(constants.INFO, 'Test message 3')
         storage.update(response)
 
         storing = self.stored_messages_count(storage, response)
@@ -134,8 +134,8 @@ class BaseTest(unittest.TestCase):
         raise NotImplementedError('This method must be set by a subclass.')
 
     def get_existing_storage(self):
-        return self.get_storage([Notification('Test message 1'),
-                                 Notification('Test message 2',
+        return self.get_storage([Message(constants.INFO, 'Test message 1'),
+                                 Message(constants.INFO, 'Test message 2',
                                               extra_tags='tag')])
 
     def test_existing_read(self):
@@ -154,7 +154,7 @@ class BaseTest(unittest.TestCase):
     def test_existing_add(self):
         storage = self.get_existing_storage()
         self.assertFalse(storage.added_new)
-        storage.add('Test message 3')
+        storage.add(constants.INFO, 'Test message 3')
         self.assert_(storage.added_new)
 
     def test_default_level(self):
@@ -175,7 +175,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(len(storage), 2)
 
     def test_settings_level(self):
-        settings.NOTIFICATIONS_LEVEL = 29
+        settings.MESSAGES_LEVEL = 29
         storage = self.get_storage()
         add_level_messages(storage)
         self.assertEqual(len(storage), 3)
@@ -190,15 +190,15 @@ class BaseTest(unittest.TestCase):
                           'success'])
 
     def test_custom_tags(self):
-        settings.NOTIFICATIONS_TAGS = {
+        settings.MESSAGES_TAGS = {
             constants.INFO: 'info',
             constants.DEBUG: '',
             constants.WARNING: '',
             constants.ERROR: 'bad',
             29: 'magic'
         }
-        # LEVEL_TAGS is a constant defined in django_notify.storage.base
-        # module, so after changing settings.NOTIFICATIONS_TAGS, we need to
+        # LEVEL_TAGS is a constant defined in django.contrib.messages.storage.base
+        # module, so after changing settings.MESSAGES_TAGS, we need to
         # update that constant too.
         base.LEVEL_TAGS = utils.get_level_tags()
         try:
@@ -210,5 +210,5 @@ class BaseTest(unittest.TestCase):
                          ['info', 'magic', 'extra-tag', '', 'bad', 'success'])
         finally:
             # Ensure the level tags constant is put back like we found it.
-            self.restore_setting('NOTIFICATIONS_TAGS')
+            self.restore_setting('MESSAGES_TAGS')
             base.LEVEL_TAGS = utils.get_level_tags()

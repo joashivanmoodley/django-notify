@@ -1,9 +1,10 @@
-from django_notify.storage.base import EOFNotification
-from django_notify.storage.fallback import FallbackStorage
-from django_notify.tests.base import BaseTest
-from django_notify.tests.cookie import set_cookie_data, \
+from django.contrib.messages import constants
+from django.contrib.messages.storage.base import EOFMessage
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.messages.tests.base import BaseTest
+from django.contrib.messages.tests.cookie import set_cookie_data, \
     stored_cookie_messages_count
-from django_notify.tests.session import set_session_data, \
+from django.contrib.messages.tests.session import set_session_data, \
     stored_session_messages_count
 
 
@@ -48,7 +49,7 @@ class FallbackTest(BaseTest):
 
         # Set initial cookie data.
         example_messages = [str(i) for i in range(5)]
-        set_cookie_data(cookie_storage, example_messages + [EOFNotification()])
+        set_cookie_data(cookie_storage, example_messages + [EOFMessage()])
 
         # Overwrite the _get method of the fallback storage to prove it is not
         # used (it would cause a TypeError: 'NoneType' object is not callable).
@@ -78,7 +79,7 @@ class FallbackTest(BaseTest):
         example_messages = [str(i) for i in range(5)]
         set_cookie_data(cookie_storage, example_messages[:4])
         set_session_data(session_storage,
-                         example_messages[4:] + [EOFNotification()])
+                         example_messages[4:] + [EOFMessage()])
 
         # Test that the message actually contains what we expect.
         self.assertEqual(list(storage), example_messages)
@@ -94,7 +95,7 @@ class FallbackTest(BaseTest):
         example_messages = [str(i) for i in range(5)]
         set_cookie_data(cookie_storage, [], encode_empty=True)
         set_session_data(session_storage,
-                         example_messages + [EOFNotification()])
+                         example_messages + [EOFMessage()])
 
         # Test that the message actually contains what we expect.
         self.assertEqual(list(storage), example_messages)
@@ -134,7 +135,7 @@ class FallbackTest(BaseTest):
         self.get_session_storage(storage)._store = None
 
         for i in range(5):
-            storage.add(str(i) * 100)
+            storage.add(constants.INFO, str(i) * 100)
         storage.update(response)
 
         cookie_storing = self.stored_cookie_messages_count(storage, response)
@@ -152,7 +153,7 @@ class FallbackTest(BaseTest):
         response = self.get_response()
 
         for i in range(5):
-            storage.add(str(i) * 900)
+            storage.add(constants.INFO, str(i) * 900)
         storage.update(response)
 
         cookie_storing = self.stored_cookie_messages_count(storage, response)
@@ -161,7 +162,7 @@ class FallbackTest(BaseTest):
         self.assertEqual(session_storing, 2)   # 1 remaining + EOF
 
         session_messages = list(self.get_session_storage(storage))
-        self.assert_(isinstance(session_messages[-1], EOFNotification))
+        self.assert_(isinstance(session_messages[-1], EOFMessage))
 
     def test_session_fallback_only(self):
         """
@@ -172,7 +173,7 @@ class FallbackTest(BaseTest):
         storage = self.get_storage()
         response = self.get_response()
 
-        storage.add('x' * 5000)
+        storage.add(constants.INFO, 'x' * 5000)
         storage.update(response)
 
         cookie_storing = self.stored_cookie_messages_count(storage, response)
@@ -181,4 +182,4 @@ class FallbackTest(BaseTest):
         self.assertEqual(session_storing, 2)   # 1 message + EOF
 
         session_messages = list(self.get_session_storage(storage))
-        self.assert_(isinstance(session_messages[-1], EOFNotification))
+        self.assert_(isinstance(session_messages[-1], EOFMessage))

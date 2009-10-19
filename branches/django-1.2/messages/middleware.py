@@ -1,14 +1,14 @@
 from django.conf import settings
-from django_notify.storage import Storage
+from django.contrib.messages.storage import Storage
 
 
-class NotificationsMiddleware(object):
+class MessagesMiddleware(object):
     """
-    Middleware which handles temporary notifications.
+    Middleware which handles temporary messages.
     
     """
     def process_request(self, request):
-        request.notifications = Storage(request)
+        request.messages = Storage(request)
 
     def process_response(self, request, response):
         """
@@ -19,10 +19,10 @@ class NotificationsMiddleware(object):
         
         """
         # A higher middleware layer may return a request which does not contain
-        # notifications storage, so make no assumption that it will be there.
-        if hasattr(request, 'notifications'):
-            unstored_messages = request.notifications.update(response)
+        # messages storage, so make no assumption that it will be there.
+        if hasattr(request, 'messages'):
+            unstored_messages = request.messages.update(response)
             if unstored_messages and settings.DEBUG:
-                raise ValueError('Not all temporary notification messages '
+                raise ValueError('Not all temporary message messages '
                                  'could be stored.')
         return response
