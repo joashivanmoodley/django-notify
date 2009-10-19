@@ -1,8 +1,8 @@
 from hashlib import sha1
 from django.conf import settings
-from django_notify import constants
-from django_notify.storage.base import BaseStorage, Notification, \
-                                       EOFNotification
+from django.contrib.messages import constants
+from django.contrib.messages.storage.base import BaseStorage, Message, \
+                                       EOFMessage
 try:
     import json   # Available in Python 2.6.
 except ImportError:
@@ -10,63 +10,60 @@ except ImportError:
     from django.utils import simplejson as json
 
 
-class NotificationEncoder(json.JSONEncoder):
+class MessageEncoder(json.JSONEncoder):
     """
-    A JSON encoder which also compactly serializes ``Notification`` and
-    ``EOFNotification`` classes.
+    A JSON encoder which also compactly serializes ``Message`` and
+    ``EOFMessage`` classes.
     
     """
-    notification_key = '__json_notification'
-    notification_eof_key = '__json_notification_eof'
+    message_key = '__json_message'
+    message_eof_key = '__json_message_eof'
 
     def default(self, obj):
-        if isinstance(obj, Notification):
-            notification = [self.notification_key, obj.message]
-            default_level = obj.level == constants.INFO
-            if default_level or obj.extra_tags:
-                notification.append(obj.level)
-                if obj.extra_tags:
-                    notification.append(obj.extra_tags)
-            return notification
-        if isinstance(obj, EOFNotification):
-            return [self.notification_eof_key]
-        return super(NotificationEncoder, self).default(obj)
+        if isinstance(obj, Message):
+            message = [self.message_key, obj.level, obj.message]
+            if obj.extra_tags:
+                message.append(obj.extra_tags)
+            return message
+        if isinstance(obj, EOFMessage):
+            return [self.message_eof_key]
+        return super(MessageEncoder, self).default(obj)
 
 
-class NotificationDecoder(json.JSONDecoder):
+class MessageDecoder(json.JSONDecoder):
     """
-    A JSON decoder which additionally supports serialized ``Notification`` and
-    ``EOFNotification`` classes.
+    A JSON decoder which additionally supports serialized ``Message`` and
+    ``EOFMessage`` classes.
     
     """
-    def process_notifications(self, obj):
+    def process_messages(self, obj):
         if isinstance(obj, list) and obj:
-            if obj[0] == NotificationEncoder.notification_key: 
-                return Notification(*obj[1:])
-            if NotificationEncoder.notification_eof_key in obj:
-                return EOFNotification()
-            return [self.process_notifications(item) for item in obj]
+            if obj[0] == MessageEncoder.message_key: 
+                return Message(*obj[1:])
+            if MessageEncoder.message_eof_key in obj:
+                return EOFMessage()
+            return [self.process_messages(item) for item in obj]
         if isinstance(obj, dict):
-            return dict([(key, self.process_notifications(value))
+            return dict([(key, self.process_messages(value))
                          for key, value in obj.iteritems()])
         return obj
 
     def decode(self, s, **kwargs):
-        decoded = super(NotificationDecoder, self).decode(s, **kwargs)
-        return self.process_notifications(decoded)
+        decoded = super(MessageDecoder, self).decode(s, **kwargs)
+        return self.process_messages(decoded)
 
 
 class CookieStorage(BaseStorage):
     """
-    Cookie based temporary notification storage backend.
+    Cookie based temporary message storage backend.
     
     """
-    cookie_name = 'notifications'
+    cookie_name = 'messages'
     max_cookie_size = 4096
 
     def _get(self, *args, **kwargs):
         """
-        Retrieve a list of messages from the notifications cookie.
+        Retrieve a list of messages from the messages cookie.
         
         """
         data = self.request.COOKIES.get(self.cookie_name)
@@ -123,7 +120,7 @@ class CookieStorage(BaseStorage):
         
         """
         if messages or encode_empty:
-            encoder = NotificationEncoder(separators=(',', ':'))
+            encoder = MessageEncoder(separators=(',', ':'))
             value = encoder.encode(messages)
             return '%s$%s' % (self._hash(value), value)
 
@@ -144,8 +141,8 @@ class CookieStorage(BaseStorage):
                 try:
                     # If we get here (and the JSON decode works), everything is
                     # good. In any other case, drop back and return None.
-                    return json.loads(value, cls=NotificationDecoder)
-                except:
+                    return json.loads(value, cls=MessageDecoder)
+                except ValueError:
                     pass
         # Mark the data as used (so it gets removed) since something was wrong
         # with the data.

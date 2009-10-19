@@ -1,6 +1,6 @@
-from django_notify.storage.base import BaseStorage, EOFNotification
-from django_notify.storage.cookie import CookieStorage
-from django_notify.storage.session import SessionStorage
+from django.contrib.messages.storage.base import BaseStorage, EOFMessage
+from django.contrib.messages.storage.cookie import CookieStorage
+from django.contrib.messages.storage.session import SessionStorage
 try:
     set
 except NameError:
@@ -12,16 +12,16 @@ def strip_eof_messages(messages):
     Return a 2 part tuple consisting of a stripped message list and EOF boolean. 
     
     The stripped message list is the original list of messages, with any
-    ``EOFNotification`` instances removed
+    ``EOFMessage`` instances removed
     
     The EOF boolean is calculated from whether there *were* any
-    ``EOFNotification`` instances in the original messages list.
+    ``EOFMessage`` instances in the original messages list.
     
     """
     if not messages:
         return messages, False
     stripped_messages = [message for message in messages
-                         if not isinstance(message, EOFNotification)]
+                         if not isinstance(message, EOFMessage)]
     found_eof = len(stripped_messages) != len(messages)
     return stripped_messages, found_eof
 
@@ -29,7 +29,7 @@ def strip_eof_messages(messages):
 def attempt_store(storage, messages, response):
     """
     Attempt to store all messages in a backend, ensuring that if there were
-    unstored messages, that they included the EOFNotification.
+    unstored messages, that they included the EOFMessage.
     
     If there *were* unstored messages and they didn't contain the EOF, store
     the messages stripped of EOF, then reattach the EOF to the list of unstored
@@ -41,7 +41,7 @@ def attempt_store(storage, messages, response):
         messages = strip_eof_messages(messages)[0]
         unstored_messages = storage._store(messages, response,
                                            remove_oldest=False) or []
-        unstored_messages.append(EOFNotification())
+        unstored_messages.append(EOFMessage())
     return unstored_messages
 
 
@@ -74,7 +74,7 @@ class FallbackStorage(BaseStorage):
             if messages:
                 self._used_storages.add(storage)
             all_messages.extend(messages)
-            # If we hit an EOFNotification instance, no more retrieval is
+            # If we hit an EOFMessage instance, no more retrieval is
             # necessary.
             if eof:
                 break
@@ -90,7 +90,7 @@ class FallbackStorage(BaseStorage):
         
         """
         messages = strip_eof_messages(messages)[0] or []
-        messages.append(EOFNotification())
+        messages.append(EOFMessage())
         for storage in self.storages:
             if messages:
                 messages = attempt_store(storage, messages, response)
@@ -100,7 +100,7 @@ class FallbackStorage(BaseStorage):
                 storage._store([], response)
                 self._used_storages.remove(storage)
 
-        # Strip any EOF notifications before we return any unstored messages
+        # Strip any EOF messages before we return any unstored messages
         # since it is specific to this backend.
         messages = strip_eof_messages(messages)[0]
         return messages

@@ -1,34 +1,33 @@
 from django.conf import settings
 from django.utils.encoding import force_unicode, StrAndUnicode
-from django_notify import constants, utils
+from django.contrib.messages import constants, utils
 
 
 LEVEL_TAGS = utils.get_level_tags()
 
 
-class Notification(StrAndUnicode):
+class Message(StrAndUnicode):
     """
-    A notification message.
+    An actual message that can be stored in any of the supported storage classes
+    (typically session- or cookie-based) and rendered in a view or template.
     
     """
-    def __init__(self, message, level=None, extra_tags=None):
+    def __init__(self, level, message, extra_tags=None):
+        self.level = int(level)
         self.message = message
         self.extra_tags = extra_tags
-        if level is None:
-            self.level = constants.INFO
-        else:
-            self.level = int(level)
 
     def _prepare(self):
         """
-        Prepare the notification for serialization by forcing the ``message``
-        and ``tags`` to unicode in case they are lazy translations.
+        Prepare the message for serialization by forcing the ``message``
+        and ``extra_tags`` to unicode in case they are lazy translations.
         
         Known "safe" types (None, int, etc.) are not converted (see Django's
         ``force_unicode`` implementation for details).
         
         """
         self.message = force_unicode(self.message, strings_only=True)
+        self.extra_tags = force_unicode(self.extra_tags, strings_only=True)
 
     def __unicode__(self):
         return force_unicode(self.message)
@@ -46,9 +45,9 @@ class Notification(StrAndUnicode):
     tags = property(_get_tags)
 
 
-class EOFNotification:
+class EOFMessage:
     """
-    A notification class which indicates the end of the message stream (i.e. no
+    A message class which indicates the end of the message stream (i.e. no
     further message retrieval is required).
     
     Not used in all storage classes.
@@ -58,9 +57,9 @@ class EOFNotification:
 
 class BaseStorage(object):
     """
-    Base backend for temporary notification storage.
+    Base backend for temporary message storage.
     
-    This is not a complete class, to be a usable storage backend, it must be
+    This is not a complete class; to be a usable storage backend, it must be
     subclassed and the two methods ``_get`` and ``_store`` overridden.
     
     """
@@ -114,22 +113,22 @@ class BaseStorage(object):
         Store a list of messages, returning a list of any messages which could
         not be stored.
         
-        Two types of objects must be able to be stored, ``Notification`` and
-        ``EOFNotification``.
+        Two types of objects must be able to be stored, ``Message`` and
+        ``EOFMessage``.
         
         **This method must be implemented by a subclass.**
         
         """
         raise NotImplementedError()
 
-    def _prepare_notifications(self, notifications):
+    def _prepare_messages(self, messages):
         """
-        Prepare a list of notifications for storage.
+        Prepare a list of messages for storage.
         
         """
         if self.store_serialized:
-            for notification in notifications:
-                notification._prepare()
+            for message in messages:
+                message._prepare()
 
     def update(self, response, fail_silently=True):
         """
@@ -141,14 +140,14 @@ class BaseStorage(object):
         
         """
         if self.used:
-            self._prepare_notifications(self._queued_messages)
+            self._prepare_messages(self._queued_messages)
             return self._store(self._queued_messages, response)
         elif self.added_new:
-            notifications = self._loaded_messages + self._queued_messages
-            self._prepare_notifications(notifications)
-            return self._store(notifications, response)
+            messages = self._loaded_messages + self._queued_messages
+            self._prepare_messages(messages)
+            return self._store(messages, response)
 
-    def add(self, message, level=None, extra_tags=''):
+    def add(self, level, message, extra_tags=''):
         """
         Queue a message to be stored.
         
@@ -159,57 +158,52 @@ class BaseStorage(object):
         if not message:
             return
         # Check that the message level is not less than the recording level.
-        if level is None:
-            level = constants.INFO
-        else:
-            level = int(level)
+        level = int(level)
         if level < self.level:
             return
         # Add the message.
         self.added_new = True
-        notification = Notification(message, level=level,
-                                    extra_tags=extra_tags)
-        self._queued_messages.append(notification)
+        message = Message(level, message, extra_tags=extra_tags)
+        self._queued_messages.append(message)
 
     def debug(self, message, extra_tags=''):
         """
         Helper method to add a message with the DEBUG level.
         
         """
-        self.add(message, level=constants.DEBUG, extra_tags=extra_tags)
+        self.add(constants.DEBUG, message, extra_tags=extra_tags)
 
     def success(self, message, extra_tags=''):
         """
         Helper method to add a message with the ``SUCCESS`` level.
         
         """
-        self.add(message, level=constants.SUCCESS, extra_tags=extra_tags)
+        self.add(constants.SUCCESS, message, extra_tags=extra_tags)
 
     def warning(self, message, extra_tags=''):
         """
         Helper method to add a message with the ``WARNING`` level.
         
         """
-        self.add(message, level=constants.WARNING, extra_tags=extra_tags)
+        self.add(constants.WARNING, message, extra_tags=extra_tags)
 
     def error(self, message, extra_tags=''):
         """
         Helper method to add a message with the ``ERROR`` level.
         
         """
-        self.add(message, level=constants.ERROR, extra_tags=extra_tags)
+        self.add(constants.ERROR, message, extra_tags=extra_tags)
 
     def _get_level(self):
         """
         Return the minimum recorded level.
         
-        The default level is the ``NOTIFICATIONS_LEVEL`` setting. If this is
+        The default level is the ``MESSAGES_LEVEL`` setting. If this is
         not found, the ``INFO`` level is used.
         
         """
         if not hasattr(self, '_level'):
-            self._level = getattr(settings, 'NOTIFICATIONS_LEVEL',
-                                  constants.INFO)
+            self._level = getattr(settings, 'MESSAGES_LEVEL', constants.INFO)
         return self._level
 
     def _set_level(self, value=None):
@@ -220,9 +214,8 @@ class BaseStorage(object):
         ``_get_level`` method).
         
         """
-        if value is None:
-            if hasattr(self, '_level'):
-                del self._level
+        if value is None and hasattr(self, '_level'):
+            del self._level
         else:
             self._level = int(value)
 

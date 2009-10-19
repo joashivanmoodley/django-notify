@@ -1,16 +1,16 @@
-from django_notify.storage.base import BaseStorage
+from django.contrib.messages.storage.base import BaseStorage
 
 
 class SessionStorage(BaseStorage):
     """
-    Session based temporary notification storage.
+    Session based temporary message storage.
     
     """
-    session_key = '_notifications'
+    session_key = '_messages'
 
     def __init__(self, request, *args, **kwargs):
         assert hasattr(request, 'session'), "The session-based temporary "\
-            "notification storage requires session middleware to be installed."
+            "message storage requires session middleware to be installed."
         super(SessionStorage, self).__init__(request, *args, **kwargs)
 
     def _get(self, *args, **kwargs):

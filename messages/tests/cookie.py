@@ -1,5 +1,6 @@
-from django_notify.tests.base import BaseTest
-from django_notify.storage.cookie import CookieStorage
+from django.contrib.messages import constants
+from django.contrib.messages.tests.base import BaseTest
+from django.contrib.messages.storage.cookie import CookieStorage
 
 
 def set_cookie_data(storage, messages, invalid=False, encode_empty=False):
@@ -66,7 +67,7 @@ class CookieTest(BaseTest):
         response = self.get_response()
 
         for i in range(5):
-            storage.add(str(i) * 900)
+            storage.add(constants.INFO, str(i) * 900)
         unstored_messages = storage.update(response)
 
         cookie_storing = self.stored_messages_count(storage, response)

@@ -2,18 +2,19 @@
 Storages used to assist in the deprecation of contrib.auth User messages.
 
 """
-from django_notify.storage.base import BaseStorage, Notification
+from django.contrib.messages import constants
+from django.contrib.messages.storage.base import BaseStorage, Message
 from django.contrib.auth.models import User
-from django_notify.storage.fallback import FallbackStorage
+from django.contrib.messages.storage.fallback import FallbackStorage
 
 
 class UserMessagesStorage(BaseStorage):
     """
-    Read-only temporary notification storage which retrieves messages from
+    Read-only temporary message storage which retrieves messages from
     the User.
     
     """
-    session_key = '_notifications'
+    session_key = '_messages'
 
     def _get_messages_queryset(self):
         """
@@ -41,7 +42,7 @@ class UserMessagesStorage(BaseStorage):
             return []
         messages = []
         for user_message in queryset:
-            messages.append(Notification(user_message.message))
+            messages.append(Message(constants.INFO, user_message.message))
         return messages
 
     def _store(self, messages, *args, **kwargs):

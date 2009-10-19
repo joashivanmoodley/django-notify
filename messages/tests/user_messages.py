@@ -1,10 +1,10 @@
 from django import http
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django_notify.storage.user_messages import UserMessagesStorage, \
+from django.contrib.messages.storage.user_messages import UserMessagesStorage, \
     LegacyFallbackStorage
-from django_notify.tests.cookie import set_cookie_data
-from django_notify.tests.fallback import FallbackTest
+from django.contrib.messages.tests.cookie import set_cookie_data
+from django.contrib.messages.tests.fallback import FallbackTest
 
 
 class UserMessagesTest(TestCase):

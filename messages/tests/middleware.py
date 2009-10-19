@@ -1,17 +1,17 @@
 import unittest
 from django import http
-from django_notify.middleware import NotificationsMiddleware
+from django.contrib.messages.middleware import MessagesMiddleware
 
 
 class MiddlewareTest(unittest.TestCase):
     def setUp(self):
-        self.middleware = NotificationsMiddleware()
+        self.middleware = MessagesMiddleware()
 
-    def test_response_without_notifications(self):
+    def test_response_without_messages(self):
         """
         A higher middleware layer may return a request directly before
-        notifications get applied, so the response middleware is tolerant of
-        notifications not existing on request.
+        messages get applied, so the response middleware is tolerant of
+        messages not existing on request.
         """
         request = http.HttpRequest()
         response = http.HttpResponse()
