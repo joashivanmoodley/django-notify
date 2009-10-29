@@ -23,7 +23,7 @@ class NotificationEncoder(json.JSONEncoder):
         if isinstance(obj, Notification):
             notification = [self.notification_key, obj.message]
             default_level = obj.level == constants.INFO
-            if default_level or obj.extra_tags:
+            if not default_level or obj.extra_tags:
                 notification.append(obj.level)
                 if obj.extra_tags:
                     notification.append(obj.extra_tags)
