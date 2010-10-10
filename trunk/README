@@ -6,6 +6,9 @@ A Django application which provides temporary notifications.
 
 Notification messages persist until a request retrieves them.
 
+As of Django 1.2, temorary notifications are included, and can be found in
+``django.contrib.messages``.
+
 
 Installation
 ============
